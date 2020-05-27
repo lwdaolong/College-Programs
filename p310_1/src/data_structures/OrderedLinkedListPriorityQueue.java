@@ -1,0 +1,206 @@
+package data_structures;
+/**
+ *  Program # 2
+ *   TODO desc.
+ *  CS310
+ *  3/9/2020
+ *  @author Logan Wang cssc1278
+ */
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import data_structures.PriorityQueue;
+import java.util.ConcurrentModificationException;
+public class OrderedLinkedListPriorityQueue<E extends Comparable<E>> implements PriorityQueue<E>{
+    //declare variables, currSize = current Size, head = start of LL, tail = end of LL, modCounter for fastfail Iterator
+    private static final int DEFAULT_MAX_CAPACITY = 1000;
+    int modCounter;
+    private int currSize;
+    private Node<E> head;
+    private Node<E> tail;
+
+    //constructor
+    public OrderedLinkedListPriorityQueue(){
+        modCounter =0;
+        currSize =0;
+        head = tail = null;
+    }
+
+    @Override
+    public boolean insert(E object) {
+        Node<E> ptr = null;
+        Node<E> temp = new Node<E>(object);
+        Node<E> curr = head;
+        if(isEmpty()){
+            tail = temp;
+            temp.next = head;
+            head = temp;
+        }else{
+            while(curr != null){
+                if(curr.data.compareTo(object) <= 0){
+                    ptr = curr;
+                }
+                curr = curr.next;
+            }
+            if(ptr == null){
+                temp.next = head;
+                head = temp;
+            }else if(ptr.next == null){
+                temp.next = ptr.next;
+                ptr.next = temp;
+                tail = temp;
+            }else{
+             temp.next = ptr.next;
+             ptr.next = temp;
+            }
+        }
+        currSize++;
+        modCounter++;
+        return true;
+    }
+
+    //assumes that list is ordered so that head is most priority
+    @Override
+    public E remove() {
+        if(!isEmpty()){
+            Node<E> temp = head;
+            head = head.next;
+            modCounter++;
+            currSize--;
+            return temp.data;
+        }
+        return null;
+    }
+
+    //todo
+    @Override
+    public boolean delete(E obj) {
+        if (isEmpty()) {
+            return false;
+        } else {
+            Node<E> prev = null;
+            Node<E> current = head;
+            while(current != null){
+                if(current.data.compareTo(obj) == 0){
+                    while(current != null && current.data.compareTo(obj)==0){
+                        removeObj(prev,current);
+                        current =current.next;
+                    }
+                    return true;
+                }
+                prev = current;
+                current = current.next;
+            }
+            return false;
+        }
+    }
+
+    private void removeObj(Node<E> prev, Node<E> current){
+        if(prev == null){
+            head = head.next;
+            currSize--;
+            modCounter++;
+        }else if(current.next == null){
+            tail = prev;
+            prev.next = null;
+            currSize--;
+            modCounter++;
+        }else{
+            prev.next = current.next;
+            currSize--;
+            modCounter++;
+        }
+    }
+
+    @Override
+    public E peek() {
+        if(isEmpty())
+            return null;
+        else
+            return head.data;
+    }
+
+    @Override
+    public boolean contains(E obj) {
+        Node<E> current = head;
+        //less efficient, but faster when trying to find element at end, especially on larger data sets
+        if(tail.data.compareTo(obj) == 0)
+            return true;
+        while(current != null){
+            if(current.data.compareTo(obj)==0)
+                return true;
+            current = current.next;
+        }
+        return false;
+    }
+
+    @Override
+    public int size() {
+        return currSize;
+    }
+
+    @Override
+    public void clear() {
+        modCounter++;
+        head=tail=null;
+        currSize =0;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        if(currSize <= 0)
+            return true;
+        return false;
+    }
+
+    @Override
+    public boolean isFull() {
+        return false;
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        return new IteratorHelper();
+    }
+
+    class IteratorHelper implements Iterator<E>{
+        Node<E> nodePtr;
+        int index;
+        int modificationCounter;
+
+        public IteratorHelper(){
+            nodePtr = head;
+            modificationCounter = modCounter;
+            index =0;
+        }
+
+        public boolean hasNext(){
+            if(modificationCounter != modCounter)
+                throw new ConcurrentModificationException();
+            return index<currSize;
+        }
+
+        public void remove(){
+            throw new UnsupportedOperationException();
+        }
+
+        public E next(){
+            if(!hasNext()){
+                throw new NoSuchElementException();
+            }
+            E temp = nodePtr.data;
+            nodePtr = nodePtr.next;
+            index++;
+            return temp;
+        }
+    }
+
+     class Node<E>{
+        E data;
+        Node<E> next;
+        public Node(E data){
+            this.data = data;
+            next = null;
+        }
+    }
+}
